@@ -73,18 +73,174 @@ Here’s an overview of the database structure:
 The following queries were created to solve specific business questions. Each query is designed to provide insights based on sales, payments, products, and customer data.
 
 ### Easy 
-1. `Add your questions here`
-2. `Add your questions here`
-3. `Add your questions here`
-4. `Add your questions here`
-5. `Add your questions here`
+1. `Retrieve a list of all customers with their corresponding product names they ordered?`
+
+```sql
+SELECT 
+	s.customer_id,
+	c.customer_name,
+	p.product_name
+FROM sales s
+INNER JOIN customers c ON c.customer_id = s.customer_id
+JOIN products p ON p.product_id = s.product_id;
+```
+
+
+2. `List all products and show the details of customers who have placed orders for them. Include products that have no orders`
+
+```sql
+SELECT
+	s.*,
+	c.customer_name,
+	p.product_name
+FROM sales as s
+LEFT JOIN  products as p ON p.product_id = s.product_id
+JOIN customers as c ON c.customer_id = s.customer_id;
+```
+
+3. `List all orders and their shipping status. Include orders that do not have any shipping records`
+
+```sql
+SELECT
+	s.*,
+	sh.delivery_status
+FROM sales s
+LEFT JOIN shippings sh ON sh.order_id = s.order_id
+where order_status = 'Cancelled';
+```
+
+
+4. `Retrieve all products, including those with no orders, along with their price`
+   
+```sql
+SELECT
+	p.product_name,
+	s.*
+FROM products p
+JOIN sales s ON s.product_id = p.product_id
+ORDER BY s.order_status ASC;
+```
+
+
+5. `Get a list of all customers who have placed orders, including those with no payment records`
+   
+```sql
+SELECT
+	c.customer_name,
+	p.*
+FROM customers c
+FULL OUTER JOIN payments p ON p.payment_id = c.customer_id;
+```
    
 ### Medium to Hard
-1. `Add your questions here`
-2. `Add your questions here`
-3. `Add your questions here`
-4. `Add your questions here`
-5. `Add your questions here`
+1. `List all customers who have placed orders where the product category is 'Accessories' and the order status is 'Completed'`
+
+```sql
+SELECT
+	c.customer_name,
+	p.product_name,
+	p.category,
+	s.order_status
+FROM products as p
+INNER JOIN sales as s ON s.product_id = p.product_id
+INNER JOIN customers as c ON c.customer_id = s.customer_id
+WHERE p.category = 'Accessories'  
+	AND 
+	s.order_status = 'Completed';
+```
+2. `Find the total quantity of each product ordered by customers from 'Delhi' and only include products with a quantity greater than 5 `
+
+```sql
+SELECT
+	c.customer_name,
+	c.state,
+	p.product_name,
+	s.quantity,
+	SUM(s.quantity)
+FROM products as p
+INNER JOIN sales as s ON s.product_id = p.product_id
+INNER JOIN customers as c ON c.customer_id = s.customer_id
+GROUP BY 1, 2, 3, 4
+	HAVING 
+	c.state = 'Delhi'
+	AND
+	s.quantity > 5;
+```
+
+3. `Get the average payment amount per customer who has placed more than 3 orders`
+
+```sql
+WITH total_amt
+AS
+	(select 
+	customer_id,
+	sum(price_per_unit * quantity) as total_amt
+from sales
+group by 1)
+SELECT
+	s.customer_id,
+	s.order_id,
+	Avg(t.total_amt) as Average_payment
+
+FROM sales s 
+JOIN total_amt t ON t.customer_id = s.customer_id
+JOIN payments p ON p.order_id = s.order_id
+GROUP BY 1, 2
+HAVING
+	s.customer_id > 3;
+```
+
+5. `Show the total quantity sold per product in the 'Accessories' category where the total quantity sold is greater than 50 and order the results by product name`
+
+```sql
+SELECT 
+	total_quantity.product_name,
+	total_quantity.category,
+	total_quantity.quantity_count
+FROM  
+		(SELECT
+			p.product_id,
+			p.product_name,
+			p.category,
+			s.quantity,
+		SUM( s.quantity * p.product_id) as quantity_count
+		FROM products p 
+		INNER JOIN sales s ON s.product_id = p.product_id
+		GROUP BY 1, 2, 3, 4) as total_quantity 
+WHERE quantity_count >50
+	AND
+		category = 'Accessories'
+ORDER BY total_quantity.product_name
+```
+
+7. `identify the best selling top 2 subcategory of each month based on the qty sold in 2023 return the sub cat name and qty sold, total rank, only for completed sales
+`
+```sql
+with brand_sales
+AS
+(SELECT
+	to_char(order_date,'month') as months,
+	p.brand,
+	SUM(s.quantity * s.price_per_unit) AS net_sale
+FROM sales s
+INNER JOIN  products p ON p.product_id = s.product_id
+WHERE 
+	EXTRACT(YEAR FROM s.order_date) = 2023
+	AND
+	s.order_status = 'Completed'
+group by 1, 2),
+
+brand_rank
+AS
+(SELECT
+	*,
+	DENSE_RANK() OVER(PARTITION BY months ORDER BY net_sale) as ranks
+FROM brand_sales)
+SELECT *
+FROM brand_rank 
+WHERE ranks = 2
+;
+```
    
 ---
 
@@ -129,9 +285,9 @@ Feel free to add your questions and code snippets below and submit them as issue
 
 ## Contact Me
 
-📄 **[Resume](#)**  
-📧 **[Email](mailto:your.email@example.com)**  
-📞 **Phone**: +123-456-7890  
+📄 **[Resume][Joré's Resume.docx](https://github.com/user-attachments/files/18280457/Jore.s.Resume.docx)**  
+📧 **[Email](jorekusi@gmail.com)**  
+📞 **Phone**: +1-313-707-1870  
 
 ---
 
@@ -143,6 +299,5 @@ functions. They do not represent real data associated with Amazon or any other e
 project is solely for learning and educational purposes, and any resemblance to actual persons,
 businesses, or events is purely coincidental.
 
-![ERD Placeholder](https://github.com/najirh/Flipkart--SQL-Project-B01/blob/main/Flipkart%20Project%20Schemas.png)
-
+![FlipKart_erd](https://github.com/user-attachments/assets/f42d911d-a997-4837-bca4-ed54f60e952d)
 
