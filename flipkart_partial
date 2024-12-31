@@ -1,0 +1,97 @@
+CREATE TABLE products(
+	product_id INT PRIMARY KEY,
+	product_name VARCHAR(50),	
+	price FLOAT,
+	cogs FLOAT,
+	category VARCHAR(30),
+	brand VARCHAR(25)
+);
+
+DROP TABLE IF EXISTS CUSTOMERS;
+CREATE TABLE customers(
+	customer_id	INT PRIMARY KEY,
+	customer_name	VARCHAR(40),
+	state VARCHAR(35)
+);
+
+DROP TABLE IF EXISTS SALES;
+CREATE TABLE SALES(
+		order_id INT PRIMARY KEY,
+		order_date DATE,
+		customer_id INT REFERENCES customers(customer_id),--FK
+		order_status VARCHAR(20),	
+		product_id INT REFERENCES products(product_id),
+		quantity INT,
+		price_per_unit FLOAT
+);
+
+DROP TABLE IF EXISTS SHIPPING;
+CREATE TABLE SHIPPING(
+	shipping_id INT PRIMARY KEY,
+	order_id INT REFERENCES SALES(ORDER_ID),
+	shipping_date DATE,
+	return_date DATE,
+	shipping_providers	VARCHAR(35),
+	delivery_status VARCHAR(25)
+);
+
+DROP TABLE IF EXISTS PAYMENTS;
+CREATE TABLE payments(
+	payment_id INT PRIMARY KEY,
+	order_id INT,
+	payment_date DATE,
+	payment_status VARCHAR(35),
+	CONSTRAINT FK_ORDER FOREIGN KEY (ORDER_ID) REFERENCES SALES(ORDER_ID)
+);
+
+SELECT * FROM CUSTOMERS;
+SELECT * FROM PRODUCTS;
+SELECT * FROM PAYMENTS;
+SELECT * FROM SALES;
+SELECT * FROM shippings;
+
+-- Retrieve a list of all customers with their corresponding product names they ordered 
+SELECT 
+	s.customer_id,
+	c.customer_name,
+	p.product_name
+FROM sales s
+INNER JOIN customers c ON c.customer_id = s.customer_id
+JOIN products p ON p.product_id = s.product_id;
+
+
+-- List all products and show the details of customers who have placed orders for them. Include products that have no orders 
+	s.*,
+	c.customer_name,
+	p.product_name
+FROM sales as s
+LEFT JOIN  products as p ON p.product_id = s.product_id
+JOIN customers as c ON c.customer_id = s.customer_id;
+
+
+-- List all orders and their shipping status. Include orders that do not have any shipping records
+
+SELECT
+	s.*,
+	sh.delivery_status
+FROM sales s
+LEFT JOIN shipping sh ON sh.order_id = s.order_id
+where order_status = 'Cancelled';
+
+-- Retrieve all products, including those with no orders, along with their price. 
+SELECT
+	p.price,
+	s.*
+FROM products p
+JOIN sales s ON s.product_id = p.product_id;
+
+
+-- Get a list of all customers who have placed orders, including those with no payment records
+
+SELECT
+	c.customer_name,
+	p.*
+FROM customers c
+FULL OUTER JOIN payments p ON p.payment_id = c.customer_id;
+
+
